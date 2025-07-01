@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Multas por Mora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .section-card { transition: transform 0.2s, box-shadow 0.2s; } /* Añadido transition para box-shadow */
+        .section-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+
+        /* Estilos para impresión */
+        @media print {
+            header, footer {
+                display: none; /* Oculta el encabezado y el pie de página al imprimir */
+            }
+            body {
+                background-color: #fff !important; /* Fondo blanco para impresión */
+                color: #000 !important; /* Texto negro para impresión */
+                margin: 0;
+                padding: 0;
+                font-size: 9pt; /* Reduce el tamaño de la fuente para que quepa más */
+                zoom: 0.85; /* Intenta escalar el contenido para que quepa en una página */
+                -webkit-print-color-adjust: exact; /* Para que los colores de fondo se impriman */
+                print-color-adjust: exact;
+            }
+            main {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                max-width: none; /* Permite que el contenido ocupe todo el ancho */
+            }
+            section#calculadora {
+                box-shadow: none;
+                border: none;
+                padding: 0.5cm; /* Añade un poco de margen para la impresión */
+                margin: 0 auto; /* Centra el contenido */
+                border-radius: 0;
+                display: block; /* Asegura que la sección se muestre como bloque */
+                width: 100%;
+                max-width: 100%;
+            }
+            section#calculadora .grid {
+                grid-template-columns: 1fr; /* Fuerza una sola columna en impresión */
+                gap: 0.3cm; /* Reduce el espacio entre elementos */
+            }
+            section#calculadora .space-y-4 > div {
+                margin-bottom: 0.15cm; /* Reduce el espacio entre los campos */
+            }
+            section#calculadora h2, section#calculadora p {
+                text-align: left; /* Alinea el texto a la izquierda para mejor lectura en impresión */
+                margin-bottom: 0.3cm;
+            }
+            section#calculadora h3 {
+                font-size: 1.1em; /* Ajusta el tamaño del título de resultados */
+            }
+            section#calculadora label {
+                font-size: 0.85em; /* Ajusta el tamaño de las etiquetas */
+            }
+            section#calculadora input, section#calculadora select {
+                padding: 0.1cm; /* Reduce el padding de los inputs */
+                font-size: 0.85em;
+            }
+            #resultadoMulta .space-y-4 > div {
+                margin-bottom: 0.1cm; /* Ajusta espacio en la sección de resultados */
+            }
+            #resultadoMulta hr {
+                margin: 0.15cm 0; /* Ajusta el margen de las líneas divisorias */
+            }
+            #multaFinal {
+                font-size: 1.5em; /* Ajusta el tamaño de la multa final */
+            }
+            .bg-blue-600 {
+                background-color: #2563eb !important; /* Fondo azul para mejor contraste en impresión */
+                color: #fff !important;
+            }
+            .bg-red-100 {
+                background-color: #fee2e2 !important; /* Fondo para alerta en impresión */
+                color: #b91c1c !important;
+            }
+            .bg-green-100 {
+                background-color: #d1fae5 !important; /* Fondo para éxito en impresión */
+                color: #065f46 !important;
+            }
+            .print-button {
+                display: none; /* Oculta el botón de imprimir en la impresión */
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-center items-center">
+            <div class="text-2xl font-bold text-slate-700">
+                <span class="text-blue-600">Calculadora</span> de Multas por Mora
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 flex-grow flex items-center justify-center">
+        <section id="calculadora" class="w-full max-w-4xl bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-slate-200 section-card">
+            <h2 class="text-3xl font-bold text-center mb-6 text-slate-700">Calculadora de Multas por Mora</h2>
+            <p class="text-center text-slate-500 mb-8 max-w-2xl mx-auto">Esta herramienta le permite calcular la multa por retraso en el cumplimiento de obligaciones contractuales, según el Art. 175 de la LCP. Ingrese los datos del contrato para obtener un cálculo preciso y detallado.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div class="space-y-4">
+                    <div>
+                        <label for="nombreProveedor" class="block text-sm font-medium text-slate-600 mb-1">Nombre del Proveedor</label>
+                        <input type="text" id="nombreProveedor" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Ej: Juan Pérez S.A.">
+                    </div>
+                    <div>
+                        <label for="duiProveedor" class="block text-sm font-medium text-slate-600 mb-1">Número de DUI del Proveedor</label>
+                        <input type="text" id="duiProveedor" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Ej: 00000000-0">
+                    </div>
+                    <div>
+                        <label for="valorContrato" class="block text-sm font-medium text-slate-600 mb-1">Monto del Contrato Adjudicado ($)</label>
+                        <input type="number" id="valorContrato" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Ej: 5000" min="0" step="0.01">
+                    </div>
+                    <div>
+                        <label for="cantidadContratada" class="block text-sm font-medium text-slate-600 mb-1">Cantidad Total Contratada (prendas/ítems)</label>
+                        <input type="number" id="cantidadContratada" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Ej: 100" min="0">
+                    </div>
+                    <div>
+                        <label for="cantidadEntregadas" class="block text-sm font-medium text-slate-600 mb-1">Cantidad de Prendas Entregadas</label>
+                        <input type="number" id="cantidadEntregadas" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Ej: 80" min="0">
+                    </div>
+                    <div>
+                        <label for="cantidadFaltantes" class="block text-sm font-medium text-slate-600 mb-1">Cantidad de Prendas Faltantes</label>
+                        <input type="number" id="cantidadFaltantes" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed" readonly>
+                    </div>
+                    <div>
+                        <label for="fechaFin" class="block text-sm font-medium text-slate-600 mb-1">Fecha de Finalización del Plazo</label>
+                        <input type="date" id="fechaFin" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label for="fechaEntrega" class="block text-sm font-medium text-slate-600 mb-1">Fecha de Entrega Real</label>
+                        <input type="date" id="fechaEntrega" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label for="salarioMinimo" class="block text-sm font-medium text-slate-600 mb-1">Salario Mínimo Vigente ($)</label>
+                        <input type="number" id="salarioMinimo" value="365.00" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Ej: 365.00" min="0" step="0.01">
+                    </div>
+                </div>
+                <div id="resultadoMulta" class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4 text-slate-700">Resultado del Cálculo</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Días de Retraso:</span>
+                            <span id="diasRetraso" class="font-bold text-xl text-slate-800">0</span>
+                        </div>
+                        <hr>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Valor Unitario del Contrato:</span>
+                            <span id="valorUnitarioContrato" class="font-bold text-xl text-slate-800">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">Monto Base para Multa:</span>
+                            <span id="montoBaseMulta" class="font-bold text-xl text-slate-800">$0.00</span>
+                        </div>
+                        <hr>
+                        <div id="detalleCalculo" class="text-sm text-slate-500 space-y-2">
+                            <p>Ingrese los datos para ver el desglose del cálculo.</p>
+                        </div>
+                        <hr>
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="text-slate-600">Multa Calculada (por días y base):</span>
+                            <span id="multaCalculada" class="font-bold text-xl text-slate-800">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
+                            <span class="font-semibold">Multa Mínima Aplicable:</span>
+                            <span id="multaMinima" class="font-bold">$0.00</span>
+                        </div>
+                        <div class="bg-blue-600 text-white p-4 rounded-lg mt-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold">MULTA FINAL A IMPONER:</span>
+                                <span id="multaFinal" class="font-extrabold text-3xl">$0.00</span>
+                            </div>
+                        </div>
+                        <div id="extincionContrato" class="mt-4 p-3 text-sm rounded-lg font-semibold hidden"></div>
+                        
+                        <div id="recomendacionesExtincion" class="mt-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg hidden">
+                            <h4 class="font-bold text-base mb-2">Recomendaciones a Seguir (si la multa excede el 8%):</h4>
+                            <p class="text-sm mb-2">Según el Art. 175 de la LCP, si la multa por mora excede el 8% del valor del contrato, se podrá iniciar el procedimiento de extinción contractual por caducidad (Art. 167 literal c) de la LCP).</p>
+                            <ol class="list-decimal list-inside text-sm space-y-1">
+                                <li>**Asesoría:** Contactar a la Dirección Departamental de Educación (DDE) o la Gerencia de Paquetes Escolares para iniciar el procedimiento.</li>
+                                <li>**Resolución de Inicio:** Elaborar la "Resolución Iniciando el Procedimiento de Extinción de Contrato" (Anexo 31 del Instructivo).</li>
+                                <li>**Notificación al Contratista:** Notificar formalmente al proveedor (Anexo 32), otorgándole un plazo de 10 días hábiles para ejercer su derecho de audiencia y defensa.</li>
+                                <li>**Continuación del Proceso:** Si el proveedor no acepta el incumplimiento o no asiste a la audiencia inicial, se deberá emitir una "Resolución Abriendo a Pruebas el Procedimiento de Extinción" (Anexo 34), dándole 8 días hábiles para presentar pruebas (Anexo 35).</li>
+                                <li>**Resolución Final:** Si el incumplimiento persiste o no es desvirtuado, se procede con la "Resolución Declarando Extinguido el Contrato" (Anexo 36) y su notificación (Anexo 37).</li>
+                                <li>**Ejecución de Garantías:** Iniciar el proceso para hacer efectiva la Garantía de Cumplimiento de Contrato y, si aplica, la Garantía de Buen Uso y Resguardo de Tela (Anexos 45, 46 y 47).</li>
+                                <li>**Inhabilitación:** Solicitar a la DINAC que establezca la incapacidad del contratista para contratar en el RUPES (Anexo 38).</li>
+                            </ol>
+                            <p class="text-sm mt-2 font-semibold">Es fundamental seguir estrictamente los procedimientos establecidos en la Ley de Procedimientos Administrativos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white mt-12 border-t border-slate-200">
+        <div class="container mx-auto px-6 py-4 text-center text-slate-500 text-sm">
+            <p>&copy; 2025 Calculadora de Multas. Herramienta de apoyo.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Obtener referencias a los elementos del DOM
+            const DOMElements = {
+                valorContrato: document.getElementById('valorContrato'),
+                cantidadContratada: document.getElementById('cantidadContratada'),
+                cantidadEntregadas: document.getElementById('cantidadEntregadas'),
+                cantidadFaltantes: document.getElementById('cantidadFaltantes'),
+                fechaFin: document.getElementById('fechaFin'),
+                fechaEntrega: document.getElementById('fechaEntrega'),
+                salarioMinimo: document.getElementById('salarioMinimo'),
+                
+                diasRetraso: document.getElementById('diasRetraso'),
+                valorUnitarioContrato: document.getElementById('valorUnitarioContrato'),
+                montoBaseMulta: document.getElementById('montoBaseMulta'),
+                multaCalculada: document.getElementById('multaCalculada'),
+                multaMinima: document.getElementById('multaMinima'),
+                multaFinal: document.getElementById('multaFinal'),
+                detalleCalculo: document.getElementById('detalleCalculo'),
+                extincionContrato: document.getElementById('extincionContrato'),
+                recomendacionesExtincion: document.getElementById('recomendacionesExtincion')
+            };
+
+            // Función principal para calcular la multa
+            function calcularMulta() {
+                const montoContratoAdjudicado = parseFloat(DOMElements.valorContrato.value) || 0;
+                const cantidadContratada = parseFloat(DOMElements.cantidadContratada.value) || 0;
+                const cantidadEntregadas = parseFloat(DOMElements.cantidadEntregadas.value) || 0;
+                const fechaFin = DOMElements.fechaFin.value ? new Date(DOMElements.fechaFin.value + 'T00:00:00') : null;
+                const fechaEntrega = DOMElements.fechaEntrega.value ? new Date(DOMElements.fechaEntrega.value + 'T00:00:00') : null;
+                const salarioMinimo = parseFloat(DOMElements.salarioMinimo.value) || 0;
+
+                // **Validaciones iniciales y reinicio de la interfaz**
+                if (!montoContratoAdjudicado || cantidadContratada <= 0 || !fechaFin || !fechaEntrega || salarioMinimo <= 0) {
+                    resetResultados();
+                    DOMElements.detalleCalculo.innerHTML = '<p class="text-red-500">Por favor, complete todos los campos numéricos con valores válidos y asegúrese que la Cantidad Total Contratada y Salario Mínimo sean mayores a 0.</p>';
+                    return;
+                }
+
+                // **Cálculo de días de retraso**
+                const diffTime = Math.max(0, fechaEntrega.getTime() - fechaFin.getTime());
+                // Se usa ceil para redondear hacia arriba y contar el día de entrega si hay alguna parte del día de retraso.
+                const diasRetraso = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                DOMElements.diasRetraso.textContent = diasRetraso;
+
+                // **Cálculo de cantidad faltante y valor unitario**
+                const cantidadFaltantes = Math.max(0, cantidadContratada - cantidadEntregadas);
+                DOMElements.cantidadFaltantes.value = cantidadFaltantes;
+                const valorUnitario = (cantidadContratada > 0) ? (montoContratoAdjudicado / cantidadContratada) : 0;
+                DOMElements.valorUnitarioContrato.textContent = `$${valorUnitario.toFixed(2)}`;
+
+                // **Determinar el monto base para la multa**
+                let montoBaseParaMulta = 0;
+                let descripcionBaseMulta = '';
+                if (cantidadFaltantes > 0) {
+                    montoBaseParaMulta = valorUnitario * cantidadFaltantes;
+                    descripcionBaseMulta = `(sobre el valor de las ${cantidadFaltantes} unidades faltantes)`;
+                } else if (diasRetraso > 0) {
+                    // Si no hay faltantes pero hay retraso, la multa se aplica al valor total del contrato.
+                    montoBaseParaMulta = montoContratoAdjudicado;
+                    descripcionBaseMulta = `(sobre el valor total del contrato entregado tardíamente)`;
+                }
+                DOMElements.montoBaseMulta.textContent = `$${montoBaseParaMulta.toFixed(2)}`;
+
+                // **Cálculo de la multa por días de retraso (multa escalonada)**
+                let multaCalculadaPorDias = 0;
+                let detalleHTML = '';
+
+                if (diasRetraso > 0 && montoBaseParaMulta > 0) {
+                    const baseParaCalculoEscalonado = montoBaseParaMulta;
+
+                    const diasTramo1 = Math.min(diasRetraso, 30);
+                    const multaTramo1 = diasTramo1 * baseParaCalculoEscalonado * 0.001; // 0.10%
+                    multaCalculadaPorDias += multaTramo1;
+                    detalleHTML += `<p>${diasTramo1} día(s) al 0.10% de $${baseParaCalculoEscalonado.toFixed(2)}: $${multaTramo1.toFixed(2)}</p>`;
+                    
+                    if (diasRetraso > 30) {
+                        const diasTramo2 = Math.min(diasRetraso - 30, 30);
+                        const multaTramo2 = diasTramo2 * baseParaCalculoEscalonado * 0.00125; // 0.125%
+                        multaCalculadaPorDias += multaTramo2;
+                        detalleHTML += `<p>${diasTramo2} día(s) al 0.125% de $${baseParaCalculoEscalonado.toFixed(2)}: $${multaTramo2.toFixed(2)}</p>`;
+                    }
+
+                    if (diasRetraso > 60) {
+                        const diasTramo3 = diasRetraso - 60;
+                        const multaTramo3 = diasTramo3 * baseParaCalculoEscalonado * 0.0015; // 0.15%
+                        multaCalculadaPorDias += multaTramo3;
+                        detalleHTML += `<p>${diasTramo3} día(s) al 0.15% de $${baseParaCalculoEscalonado.toFixed(2)}: $${multaTramo3.toFixed(2)}</p>`;
+                    }
+                    detalleHTML = `<p>Base del cálculo: $${baseParaCalculoEscalonado.toFixed(2)} ${descripcionBaseMulta}</p>` + detalleHTML;
+                } else if (diasRetraso === 0) {
+                    detalleHTML = '<p>No hay retraso en la entrega, por lo tanto, no aplica multa por mora.</p>';
+                } else { // días de retraso > 0 pero montoBaseParaMulta es 0 (ej. cantidad faltantes 0 y monto contrato 0)
+                    detalleHTML = '<p>No se puede calcular la multa. Asegúrese de que el contrato tenga un valor o que existan prendas faltantes.</p>';
+                }
+                
+                DOMElements.detalleCalculo.innerHTML = detalleHTML;
+                DOMElements.multaCalculada.textContent = `$${multaCalculadaPorDias.toFixed(2)}`;
+
+                // **Cálculo de multa mínima**
+                const multaMinimaAplicable = (montoContratoAdjudicado > 10000) ? salarioMinimo : (salarioMinimo * 0.5);
+                DOMElements.multaMinima.textContent = `$${multaMinimaAplicable.toFixed(2)}`;
+
+                // **Determinación de la multa final**
+                let multaFinalAImponer = 0;
+                if (diasRetraso > 0 && montoBaseParaMulta > 0) {
+                    multaFinalAImponer = Math.max(multaCalculadaPorDias, multaMinimaAplicable);
+                }
+                DOMElements.multaFinal.textContent = `$${multaFinalAImponer.toFixed(2)}`;
+
+                // **Evaluación del umbral de extinción del contrato (8%)**
+                const umbralExtincion = montoContratoAdjudicado * 0.08;
+                if (multaFinalAImponer > 0 && multaFinalAImponer > umbralExtincion) {
+                    DOMElements.extincionContrato.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+                    DOMElements.extincionContrato.classList.add('bg-red-100', 'text-red-700');
+                    DOMElements.extincionContrato.innerHTML = `⚠️ La multa final ($${multaFinalAImponer.toFixed(2)}) excede el 8% del valor del contrato ($${umbralExtincion.toFixed(2)}). Esto podría ser causal de extinción del contrato.`;
+                    DOMElements.recomendacionesExtincion.classList.remove('hidden');
+                } else if (multaFinalAImponer > 0 && multaFinalAImponer <= umbralExtincion) {
+                    DOMElements.extincionContrato.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+                    DOMElements.extincionContrato.classList.add('bg-green-100', 'text-green-700');
+                    DOMElements.extincionContrato.innerHTML = `✅ La multa final ($${multaFinalAImponer.toFixed(2)}) no excede el 8% del valor del contrato ($${umbralExtincion.toFixed(2)}).`;
+                    DOMElements.recomendacionesExtincion.classList.add('hidden');
+                } else {
+                    DOMElements.extincionContrato.classList.add('hidden');
+                    DOMElements.recomendacionesExtincion.classList.add('hidden');
+                }
+            }
+
+            // Función para reiniciar los resultados a su estado inicial
+            function resetResultados() {
+                DOMElements.diasRetraso.textContent = '0';
+                DOMElements.valorUnitarioContrato.textContent = '$0.00';
+                DOMElements.montoBaseMulta.textContent = '$0.00';
+                DOMElements.multaCalculada.textContent = '$0.00';
+                DOMElements.multaMinima.textContent = '$0.00';
+                DOMElements.multaFinal.textContent = '$0.00';
+                DOMElements.detalleCalculo.innerHTML = '<p>Ingrese los datos para ver el desglose del cálculo.</p>';
+                DOMElements.extincionContrato.classList.add('hidden');
+                DOMElements.recomendacionesExtincion.classList.add('hidden');
+            }
+
+            // Event listeners para los cambios en los inputs
+            Object.values(DOMElements).forEach(element => {
+                if (element && element.tagName === 'INPUT' || element.tagName === 'SELECT') {
+                    element.addEventListener('input', calcularMulta);
+                }
+            });
+
+            // Llamar al cálculo inicial para establecer el estado de la UI al cargar la página
+            calcularMulta();
+        });
+    </script>
+</body>
+</html>
